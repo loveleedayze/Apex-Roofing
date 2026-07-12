@@ -34,6 +34,7 @@ export default function MaggieChat() {
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
   const [contact, setContact] = useState({ name: "", phone: "" });
+  const [leadSent, setLeadSent] = useState(false); // guard against duplicate CRM leads
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -59,7 +60,11 @@ export default function MaggieChat() {
     setContact(captured);
 
     try {
-      const finalize = Boolean(captured.phone); // enough to route to CRM
+      // Finalize (dispatch to CRM) only ONCE — the first time we have a phone
+      // number. The captured phone persists in state, so without this guard we
+      // would send a fresh duplicate lead on every subsequent message.
+      const finalize = Boolean(captured.phone) && !leadSent;
+      if (finalize) setLeadSent(true);
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
