@@ -4,6 +4,7 @@ import QuoteWidget from "@/components/QuoteWidget";
 import BeforeAfter from "@/components/BeforeAfter";
 import Reviews from "@/components/Reviews";
 import CTABand from "@/components/CTABand";
+import { site } from "@/lib/site";
 
 export default function HomePage() {
   return (
@@ -37,7 +38,7 @@ export default function HomePage() {
             <h2 className="h2 mt-2">Drag to See the Difference</h2>
             <p className="mt-3 text-slate-500">
               From weathered, curling asphalt to crisp architectural shingles —
-              slide the handle to compare an actual Apex job.
+              slide the handle to compare an actual {site.name} job.
             </p>
             <ul className="mt-6 space-y-2 text-sm text-brand-slate">
               <li>✓ Full tear-off & deck inspection</li>

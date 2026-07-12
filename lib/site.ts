@@ -10,6 +10,8 @@ export const site = {
   email: "estimates@apexroofing.com",
   city: "Austin, TX",
   license: "TX-RC-0098421",
+  // Short header sub-label under the logo.
+  tagline: "Roofing • Storm • Gutters",
 };
 
 export const services = [

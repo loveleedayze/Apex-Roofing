@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { normalizeLead, dispatchToCRMs } from "@/lib/crm";
 import { buildSystemPrompt, MODEL } from "@/lib/maggie";
+import { site } from "@/lib/site";
 
 // POST /api/chat
 // Two jobs:
@@ -129,7 +130,7 @@ function replyFor(intent: Intent, finalized: boolean): string {
     case "estimate":
       return "Great — I can set up a free, no-pressure estimate. Is this a repair or a full replacement? And what's the best name and phone number to reach you?";
     case "greeting":
-      return "Hi there! I'm Maggie Mae, Apex Roofing's AI receptionist. Are you dealing with storm/leak damage, or looking for a routine roofing estimate?";
+      return `Hi there! I'm Maggie Mae, ${site.name}'s AI receptionist. Are you dealing with storm/leak damage, or looking for a routine roofing estimate?`;
     default:
       return "I can help with that! To point you to the right crew — is this an urgent storm/leak issue, or a routine estimate for shingles, metal, TPO, or gutters?";
   }

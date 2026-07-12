@@ -25,7 +25,7 @@ export default function Hero() {
           </h1>
 
           <p className="mt-4 max-w-lg text-white/80">
-            Storm damage or a routine upgrade — Apex Roofing delivers premium
+            Storm damage or a routine upgrade — {site.name} delivers premium
             asphalt, metal, and flat TPO systems with same-day inspections and a
             lifetime workmanship warranty.
           </p>
@@ -51,7 +51,7 @@ export default function Hero() {
         {/* Right: the gated quote widget lives on the homepage; here we show a
             visual hero card that also anchors the eye toward conversion. */}
         <div className="animate-fade-up rounded-2xl bg-white/5 p-6 ring-1 ring-white/10 backdrop-blur">
-          <div className="text-sm font-semibold text-brand-gold">Why homeowners pick Apex</div>
+          <div className="text-sm font-semibold text-brand-gold">Why homeowners pick {site.name}</div>
           <ul className="mt-4 space-y-4">
             {[
               ["Same-day inspections", "Report + photos within hours, not days."],

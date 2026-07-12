@@ -7,7 +7,7 @@ export default function Footer() {
     <footer className="bg-brand-navy text-white/80">
       <div className="container-x grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <div className="text-xl font-extrabold text-white">Apex Roofing</div>
+          <div className="text-xl font-extrabold text-white">{site.name}</div>
           <p className="mt-3 text-sm">
             Premium residential & commercial roofing serving {site.city} and
             surrounding areas. Licensed & insured — {site.license}.
@@ -64,7 +64,7 @@ export default function Footer() {
 
       <div className="border-t border-white/10">
         <div className="container-x flex flex-col items-center justify-between gap-2 py-5 text-xs text-white/50 sm:flex-row">
-          <span>© {new Date().getFullYear()} Apex Roofing. All rights reserved.</span>
+          <span>© {new Date().getFullYear()} {site.name}. All rights reserved.</span>
           <span>Demo site — built with Next.js & Tailwind CSS.</span>
         </div>
       </div>

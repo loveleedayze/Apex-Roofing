@@ -43,9 +43,9 @@ export default function Header() {
           <Link href="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
             <Logo />
             <div className="leading-tight">
-              <div className="text-lg font-extrabold text-brand-navy">Apex Roofing</div>
+              <div className="text-lg font-extrabold text-brand-navy">{site.name}</div>
               <div className="text-[11px] font-medium uppercase tracking-wider text-brand-accent">
-                Roofing • Storm • Gutters
+                {site.tagline}
               </div>
             </div>
           </Link>
@@ -114,9 +114,9 @@ export default function Header() {
 function Logo() {
   return (
     <svg width="40" height="40" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-      <rect width="48" height="48" rx="10" fill="#0b1b2b" />
-      <path d="M24 10 L40 24 H33 V37 H15 V24 H8 Z" fill="#f97316" />
-      <rect x="21" y="28" width="6" height="9" fill="#0b1b2b" />
+      <rect width="48" height="48" rx="10" className="fill-brand-navy" />
+      <path d="M24 10 L40 24 H33 V37 H15 V24 H8 Z" className="fill-brand-accent" />
+      <rect x="21" y="28" width="6" height="9" className="fill-brand-navy" />
     </svg>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { MessageCircle, X, Send, Sparkles, Bot } from "lucide-react";
+import { site } from "@/lib/site";
 
 type Msg = { from: "maggie" | "user"; text: string; time: string };
 
@@ -12,7 +13,7 @@ const now = () =>
 const SEED: Msg[] = [
   {
     from: "maggie",
-    text: "Hi, I'm Maggie Mae, your AI Receptionist at Apex Roofing! 👋 Are you dealing with storm/leak damage, or looking for a routine roofing estimate?",
+    text: `Hi, I'm Maggie Mae, your AI Receptionist at ${site.name}! 👋 Are you dealing with storm/leak damage, or looking for a routine roofing estimate?`,
     time: "9:14 AM",
   },
   {
@@ -80,7 +81,7 @@ export default function MaggieChat() {
         ...m,
         {
           from: "maggie",
-          text: "Sorry, I hit a snag — please call us at (555) 123-ROOF and we'll help right away!",
+          text: `Sorry, I hit a snag — please call us at ${site.phoneDisplay} and we'll help right away!`,
           time: now(),
         },
       ]);
