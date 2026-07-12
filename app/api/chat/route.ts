@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
+import Anthropic from "@anthropic-ai/sdk";
 import { normalizeLead, dispatchToCRMs } from "@/lib/crm";
+import { buildSystemPrompt, MODEL } from "@/lib/maggie";
 
 // POST /api/chat
 // Two jobs:
-//  1) Return Maggie's next reply for a given user message (rule-based demo).
+//  1) Return Maggie's next reply. With ANTHROPIC_API_KEY set she's a real
+//     Claude-powered receptionist; without it she falls back to rule-based
+//     demo replies so the site always works.
 //  2) When a transcript qualifies a lead, push the full context to the CRMs.
 export async function POST(req: Request) {
   let body: any;
@@ -14,6 +18,9 @@ export async function POST(req: Request) {
   }
 
   const { message, transcript, contact, finalize } = body || {};
+
+  // Maggie's reply (Claude when configured, rule-based otherwise).
+  const reply = await generateReply(message, transcript);
 
   // --- Lead finalization branch ------------------------------------------
   // Called when the visitor has shared enough to route to the CRM.
@@ -30,19 +37,69 @@ export async function POST(req: Request) {
       ok: true,
       leadId: lead.id,
       priority: lead.priority,
-      reply: replyFor(intent, true),
+      reply,
       deliveries,
     });
   }
 
-  // --- Conversational branch ---------------------------------------------
-  const intent = detectIntent(String(message || ""));
-  return NextResponse.json({
-    ok: true,
-    intent,
-    reply: replyFor(intent, false),
-  });
+  return NextResponse.json({ ok: true, reply });
 }
+
+type TranscriptItem = { role: "maggie" | "user"; text: string };
+
+// Generate Maggie's next line. Uses Claude when a key is configured; on any
+// failure (or no key) it falls back to the rule-based replies below so the
+// widget never breaks in a live demo.
+async function generateReply(message: unknown, transcript?: TranscriptItem[]): Promise<string> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const fallback = () => replyFor(detectIntent(String(message || "")), false);
+
+  if (!apiKey) return fallback();
+
+  try {
+    const client = new Anthropic({ apiKey });
+    const res = await client.messages.create({
+      model: MODEL,
+      max_tokens: 1024,
+      thinking: { type: "disabled" }, // snappy replies for a live chat widget
+      system: buildSystemPrompt(),
+      messages: toClaudeMessages(transcript, message),
+    });
+    const textBlock = res.content.find(
+      (b): b is Anthropic.TextBlock => b.type === "text",
+    );
+    return textBlock?.text?.trim() || fallback();
+  } catch (err) {
+    console.error("[maggie] Claude call failed, falling back to rule-based:", err);
+    return fallback();
+  }
+}
+
+// Convert the widget transcript into Claude's message format. Claude requires
+// the first message to come from the user, so drop any leading assistant turns
+// (the widget seeds the conversation with Maggie's greeting).
+function toClaudeMessages(
+  transcript: TranscriptItem[] | undefined,
+  latest: unknown,
+): Anthropic.MessageParam[] {
+  const items =
+    Array.isArray(transcript) && transcript.length
+      ? transcript
+      : [{ role: "user" as const, text: String(latest || "") }];
+
+  const mapped: Anthropic.MessageParam[] = items.map((m) => ({
+    role: m.role === "maggie" ? ("assistant" as const) : ("user" as const),
+    content: m.text,
+  }));
+
+  while (mapped.length && mapped[0].role === "assistant") mapped.shift();
+  if (!mapped.length) mapped.push({ role: "user", content: String(latest || "") });
+  return mapped;
+}
+
+// ---------------------------------------------------------------------------
+// Rule-based fallback (also used to tag lead urgency for the CRM)
+// ---------------------------------------------------------------------------
 
 type Intent = "storm" | "estimate" | "commercial" | "gutters" | "greeting" | "unknown";
 
