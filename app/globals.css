@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  @apply bg-white text-brand-navy antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Reusable component classes ------------------------------------------- */
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg font-semibold
+           transition-transform duration-150 active:scale-95 select-none;
+  }
+  .btn-cta {
+    @apply btn bg-brand-accent text-white shadow-cta hover:bg-brand-accentDark
+           px-5 py-3;
+  }
+  .btn-ghost {
+    @apply btn border border-white/30 text-white hover:bg-white/10 px-5 py-3;
+  }
+  .btn-outline {
+    @apply btn border-2 border-brand-accent text-brand-accent hover:bg-brand-accent
+           hover:text-white px-5 py-3;
+  }
+  .container-x {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6;
+  }
+  .section {
+    @apply py-16 sm:py-20;
+  }
+  .eyebrow {
+    @apply text-sm font-bold uppercase tracking-wider text-brand-accent;
+  }
+  .h2 {
+    @apply text-3xl sm:text-4xl font-extrabold tracking-tight text-brand-navy;
+  }
+}
+
+/* Range slider styling for the quote widget + before/after component */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 9999px;
+  background: #e2e8f0;
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: #f97316;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: #f97316;
+  border: 3px solid #fff;
+  cursor: pointer;
+}
