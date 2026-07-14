@@ -13,7 +13,7 @@ import { site, services } from "@/lib/site";
 // Which Claude model powers Maggie.
 //   - "claude-opus-4-8"  → most capable (default)
 //   - "claude-haiku-4-5" → faster & cheaper; great for a high-volume chat widget
-export const MODEL = "claude-opus-4-8";
+export const MODEL = "claude-haiku-4-5";
 
 // Per-client knowledge. Add anything Maggie should be able to talk about:
 // hours, exact service area, financing, warranties, insurance-claim help, etc.
