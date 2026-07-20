@@ -47,6 +47,19 @@ body {
   }
 }
 
+/* Respect reduced-motion: the demo dashboard leans on entrance animations,
+   which should degrade to an instant state change rather than motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Range slider styling for the quote widget + before/after component */
 input[type="range"] {
   -webkit-appearance: none;

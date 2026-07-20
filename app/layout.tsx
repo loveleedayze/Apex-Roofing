@@ -1,8 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import MaggieChat from "@/components/MaggieChat";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -39,13 +36,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
-        <Header />
-        <main>{children}</main>
-        <Footer />
-        {/* Persistent AI receptionist — anchored bottom-LEFT */}
-        <MaggieChat />
-      </body>
+      {/* Chrome (header/footer/chat) lives in the (marketing) group so the
+          demo dashboard at /demo can render its own full-screen shell. */}
+      <body>{children}</body>
     </html>
   );
 }
