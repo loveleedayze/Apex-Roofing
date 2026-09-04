@@ -11,8 +11,8 @@
 import { site, services } from "@/lib/site";
 
 // Which Claude model powers Maggie.
-//   - "claude-opus-4-8"  → most capable (default)
-//   - "claude-haiku-4-5" → faster & cheaper; great for a high-volume chat widget
+//   - "claude-haiku-4-5" → fast & cheap; great for a high-volume chat widget (current)
+//   - "claude-opus-5"    → most capable; better judgment on off-script questions
 export const MODEL = "claude-haiku-4-5";
 
 // Per-client knowledge. Add anything Maggie should be able to talk about:
