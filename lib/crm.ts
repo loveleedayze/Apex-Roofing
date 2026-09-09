@@ -52,6 +52,9 @@ export function normalizeLead(
 
 /** JobNimbus "Contact + Job" create payload. */
 export function toJobNimbusPayload(lead: NormalizedLead) {
+  const bilingual = lead.context.needs_bilingual_followup === true;
+  const tags: string[] = [lead.source, lead.priority];
+  if (bilingual) tags.push("bilingual-followup");
   return {
     record_type_name: "Lead",
     display_name: lead.contact.name,
@@ -60,12 +63,14 @@ export function toJobNimbusPayload(lead: NormalizedLead) {
     status_name: lead.priority === "urgent" ? "Storm - Hot" : "New Lead",
     source_name: "Website",
     description: JSON.stringify(lead.context),
-    tags: [lead.source, lead.priority],
+    tags,
   };
 }
 
 /** AccuLynx "Lead" create payload. */
 export function toAccuLynxPayload(lead: NormalizedLead) {
+  const bilingual = lead.context.needs_bilingual_followup === true;
+  const notes = JSON.stringify(lead.context, null, 2);
   return {
     firstName: lead.contact.name.split(" ")[0],
     lastName: lead.contact.name.split(" ").slice(1).join(" ") || "-",
@@ -73,7 +78,7 @@ export function toAccuLynxPayload(lead: NormalizedLead) {
     cellPhone: lead.contact.phone,
     leadSource: "Web Form",
     milestone: lead.priority === "urgent" ? "Inspection - Urgent" : "New Lead",
-    notes: JSON.stringify(lead.context, null, 2),
+    notes: bilingual ? `[BILINGUAL FOLLOWUP - ES]\n${notes}` : notes,
   };
 }
 

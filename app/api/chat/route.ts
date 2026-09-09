@@ -27,17 +27,30 @@ export async function POST(req: Request) {
   // Called when the visitor has shared enough to route to the CRM.
   if (finalize && contact?.phone) {
     const intent = detectIntent(String(message || "") + " " + JSON.stringify(transcript || []));
+    const language = detectLanguage(collectVisitorText(transcript, message));
+    const needsBilingualFollowup = language === "es";
+
+    // Only pay for the summary call when the lead actually needs bilingual
+    // follow-up — for English leads the transcript already reads natively.
+    const bilingualSummary = needsBilingualFollowup
+      ? await summarizeForBilingualHandoff({ transcript, contact, intent })
+      : null;
+
     const lead = normalizeLead("maggie_chat", contact, {
       intent,
       transcript,
       channel: "maggie_ai_receptionist",
       priority: intent === "storm" ? "urgent" : "standard",
+      detected_language: language,
+      needs_bilingual_followup: needsBilingualFollowup,
+      ...(bilingualSummary ? { bilingual_summary: bilingualSummary } : {}),
     });
     const deliveries = await dispatchToCRMs(lead);
     return NextResponse.json({
       ok: true,
       leadId: lead.id,
       priority: lead.priority,
+      needsBilingualFollowup,
       reply,
       deliveries,
     });
@@ -133,5 +146,109 @@ function replyFor(intent: Intent, finalized: boolean): string {
       return `Hi there! I'm Maggie Mae, ${site.name}'s AI receptionist. Are you dealing with storm/leak damage, or looking for a routine roofing estimate?`;
     default:
       return "I can help with that! To point you to the right crew — is this an urgent storm/leak issue, or a routine estimate for shingles, metal, TPO, or gutters?";
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Bilingual follow-up support
+// ---------------------------------------------------------------------------
+// Flag Spanish-speaking leads so the roofing company can route the callback
+// to a bilingual team member. Detection is heuristic (fast, no LLM call);
+// the English summary uses Claude and is skipped in demo mode without a key.
+
+function collectVisitorText(transcript: unknown, latest: unknown): string {
+  const parts: string[] = [];
+  if (Array.isArray(transcript)) {
+    for (const m of transcript as TranscriptItem[]) {
+      if (m && m.role === "user" && typeof m.text === "string") parts.push(m.text);
+    }
+  }
+  if (typeof latest === "string") parts.push(latest);
+  return parts.join(" ");
+}
+
+// Score Spanish- vs English-marker hits across the visitor's messages.
+// Small closed-class stopword list — high precision, low recall is fine here
+// because we aggregate over the whole transcript.
+const ES_MARKERS = /\b(hola|gracias|por favor|buenos|buenas|d[ií]a|d[ií]as|tarde|noche|necesito|necesita|quiero|puedo|puede|est[aá]|estamos|estoy|tengo|tiene|casa|techo|tejado|gotera|goteras|lluvia|granizo|tormenta|reparar|reparaci[oó]n|presupuesto|estimado|gratis|cu[aá]nto|d[oó]nde|cu[aá]ndo|c[oó]mo|s[ií]|no|el|la|los|las|un|una|de|del|para|con|mi|mis|su|sus|y|o|pero|porque|hoy|ma[ñn]ana|ayer|ahora|muy|m[aá]s)\b/gi;
+
+const EN_MARKERS = /\b(hi|hello|hey|thanks|thank|please|good|morning|afternoon|evening|need|want|can|is|are|am|have|has|house|roof|leak|leaks|rain|hail|storm|repair|estimate|free|how|where|when|what|yes|no|the|a|an|of|for|with|my|your|and|or|but|because|today|tomorrow|yesterday|now|very|more)\b/gi;
+
+function detectLanguage(text: string): "en" | "es" | "unknown" {
+  if (!text) return "unknown";
+  const es = (text.match(ES_MARKERS) || []).length;
+  const en = (text.match(EN_MARKERS) || []).length;
+  if (es === 0 && en === 0) return "unknown";
+  if (es > en * 1.2) return "es";
+  if (en > es * 1.2) return "en";
+  return "unknown";
+}
+
+type BilingualSummary = {
+  caller_name: string;
+  phone: string;
+  need: string;
+  urgency: "urgent" | "standard";
+};
+
+async function summarizeForBilingualHandoff(args: {
+  transcript: unknown;
+  contact: { name?: string; phone?: string };
+  intent: Intent;
+}): Promise<BilingualSummary | null> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const fallbackNeed =
+    args.intent === "storm"
+      ? "Storm/leak damage — needs urgent inspection."
+      : args.intent === "commercial"
+      ? "Commercial flat/TPO roofing inquiry."
+      : args.intent === "gutters"
+      ? "Gutter installation or repair."
+      : "Roofing estimate request.";
+  const fallback: BilingualSummary = {
+    caller_name: args.contact?.name?.trim() || "Unknown",
+    phone: args.contact?.phone?.trim() || "",
+    need: fallbackNeed,
+    urgency: args.intent === "storm" ? "urgent" : "standard",
+  };
+
+  if (!apiKey) return fallback;
+
+  const messagesText = Array.isArray(args.transcript)
+    ? (args.transcript as TranscriptItem[])
+        .map((m) => `${m.role === "maggie" ? "Maggie" : "Visitor"}: ${m.text}`)
+        .join("\n")
+    : "";
+
+  try {
+    const client = new Anthropic({ apiKey });
+    const res = await client.messages.create({
+      model: MODEL,
+      max_tokens: 400,
+      thinking: { type: "disabled" },
+      system:
+        "You translate and summarize a Spanish-language roofing chat into English for a bilingual team member's callback. Respond with ONLY a JSON object matching this shape: {\"caller_name\": string, \"phone\": string, \"need\": string, \"urgency\": \"urgent\" | \"standard\"}. Keep `need` to one sentence. No preamble, no code fences.",
+      messages: [
+        {
+          role: "user",
+          content: `Contact on file: name=${fallback.caller_name}, phone=${fallback.phone}.\n\nTranscript:\n${messagesText}`,
+        },
+      ],
+    });
+    const textBlock = res.content.find(
+      (b): b is Anthropic.TextBlock => b.type === "text",
+    );
+    const raw = textBlock?.text?.trim();
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw) as Partial<BilingualSummary>;
+    return {
+      caller_name: parsed.caller_name?.trim() || fallback.caller_name,
+      phone: parsed.phone?.trim() || fallback.phone,
+      need: parsed.need?.trim() || fallback.need,
+      urgency: parsed.urgency === "urgent" ? "urgent" : "standard",
+    };
+  } catch (err) {
+    console.error("[maggie] bilingual summary failed, using fallback:", err);
+    return fallback;
   }
 }
