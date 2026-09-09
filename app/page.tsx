@@ -3,6 +3,7 @@ import ServiceGrid from "@/components/ServiceGrid";
 import QuoteWidget from "@/components/QuoteWidget";
 import BeforeAfter from "@/components/BeforeAfter";
 import Reviews from "@/components/Reviews";
+import HumanVsMaggie from "@/components/HumanVsMaggie";
 import CTABand from "@/components/CTABand";
 import { site } from "@/lib/site";
 
@@ -51,6 +52,8 @@ export default function HomePage() {
       </section>
 
       <Reviews />
+
+      <HumanVsMaggie />
 
       <CTABand />
     </>
