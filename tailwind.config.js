@@ -42,10 +42,26 @@ module.exports = {
           "70%": { transform: "scale(1.1)", opacity: "0" },
           "100%": { opacity: "0" },
         },
+        // Demo mode: a lead row landing in the pipeline mid-presentation.
+        "flash-in": {
+          "0%": {
+            opacity: "0",
+            transform: "translateY(-8px) scale(0.97)",
+            boxShadow: "0 0 0 0 rgba(249, 115, 22, 0.6)",
+          },
+          "40%": {
+            opacity: "1",
+            transform: "translateY(0) scale(1)",
+            boxShadow: "0 0 0 8px rgba(249, 115, 22, 0.25)",
+          },
+          "70%": { boxShadow: "0 0 0 4px rgba(249, 115, 22, 0.35)" },
+          "100%": { boxShadow: "0 0 0 0 rgba(249, 115, 22, 0)" },
+        },
       },
       animation: {
         "fade-up": "fade-up 0.5s ease-out both",
         "pulse-ring": "pulse-ring 2s infinite",
+        "flash-in": "flash-in 2.4s ease-out both",
       },
     },
   },

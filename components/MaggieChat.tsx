@@ -34,7 +34,14 @@ export default function MaggieChat() {
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
   const [contact, setContact] = useState({ name: "", phone: "" });
-  const [leadSent, setLeadSent] = useState(false); // guard against duplicate CRM leads
+  // Once a lead is routed we hold its id and what's still missing from it, so
+  // later messages can enrich the same record rather than create duplicates.
+  const [lead, setLead] = useState<{ id: string; missing: string[] } | null>(null);
+  // "degraded" = a key is set but Claude is failing, so these replies are
+  // canned. Shown to developers only — a homeowner should never see the
+  // client's site accuse itself of being broken.
+  const [mode, setMode] = useState<"live" | "demo" | "degraded">("live");
+  const showDegraded = mode === "degraded" && process.env.NODE_ENV !== "production";
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -50,21 +57,24 @@ export default function MaggieChat() {
     setInput("");
     setTyping(true);
 
-    // Try to opportunistically capture a phone number from the message.
+    // A phone number is the one detail a regex reads reliably, and it's our
+    // signal that the visitor is ready to be routed to the CRM. Name and
+    // address are extracted server-side by Claude, which reads the whole
+    // conversation instead of guessing at sentence patterns.
     const phoneMatch = text.match(/(\+?\d[\d\s().-]{8,}\d)/);
     const captured = { ...contact };
     if (phoneMatch) captured.phone = phoneMatch[1];
-    if (!captured.name && /(my name is|i'm|i am|this is)\s+([a-z]+)/i.test(text)) {
-      captured.name = RegExp.$2;
-    }
     setContact(captured);
 
     try {
-      // Finalize (dispatch to CRM) only ONCE — the first time we have a phone
-      // number. The captured phone persists in state, so without this guard we
-      // would send a fresh duplicate lead on every subsequent message.
-      const finalize = Boolean(captured.phone) && !leadSent;
-      if (finalize) setLeadSent(true);
+      // Route the lead the first time we see a phone number — an urgent storm
+      // lead shouldn't wait on the visitor finishing their details. After that,
+      // keep sending the lead id while anything is still missing so the server
+      // can fill in a name or address that arrives later. Once the lead is
+      // complete we stop, so we never spam the CRM.
+      const finalize = Boolean(captured.phone) && !lead;
+      const enrich = lead && lead.missing.length > 0 ? lead : null;
+
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -73,9 +83,17 @@ export default function MaggieChat() {
           transcript: nextMsgs.map((m) => ({ role: m.from, text: m.text })),
           contact: captured,
           finalize,
+          leadId: enrich?.id,
+          leadMissing: enrich?.missing,
         }),
       });
       const data = await res.json();
+
+      if (data.leadId) {
+        setLead({ id: data.leadId, missing: data.leadMissing ?? [] });
+      }
+      if (data.mode) setMode(data.mode);
+
       setTimeout(() => {
         setTyping(false);
         setMsgs((m) => [...m, { from: "maggie", text: data.reply, time: now() }]);
@@ -119,10 +137,17 @@ export default function MaggieChat() {
             </button>
           </div>
 
-          {/* Intro banner */}
-          <div className="bg-orange-50 px-4 py-2 text-center text-xs font-semibold text-brand-accentDark">
-            Hi, I&apos;m Maggie Mae, your AI Receptionist.
-          </div>
+          {/* Intro banner — or a dev-only warning when Claude is failing and
+              these replies are actually canned. Never shown in production. */}
+          {showDegraded ? (
+            <div className="bg-amber-100 px-4 py-2 text-center text-xs font-semibold text-amber-900">
+              ⚠️ DEV: Claude call failing — these are canned replies. See server logs.
+            </div>
+          ) : (
+            <div className="bg-orange-50 px-4 py-2 text-center text-xs font-semibold text-brand-accentDark">
+              Hi, I&apos;m Maggie Mae, your AI Receptionist.
+            </div>
+          )}
 
           {/* Messages */}
           <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto bg-slate-50 p-4">

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { normalizeLead, dispatchToCRMs } from "@/lib/crm";
+import { normalizeLead, dispatchToCRMs, missingFields } from "@/lib/crm";
+import { recordClaudeSuccess, recordClaudeFailure, getHealth } from "@/lib/health";
 import { buildSystemPrompt, MODEL } from "@/lib/maggie";
 import { site } from "@/lib/site";
 
@@ -18,14 +19,42 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { message, transcript, contact, finalize } = body || {};
+  const { message, transcript, contact, finalize, leadId, leadMissing } = body || {};
 
   // Maggie's reply (Claude when configured, rule-based otherwise).
   const reply = await generateReply(message, transcript);
 
-  // --- Lead finalization branch ------------------------------------------
-  // Called when the visitor has shared enough to route to the CRM.
-  if (finalize && contact?.phone) {
+  // --- Lead routing -------------------------------------------------------
+  // A phone number is enough to route: an urgent storm lead should reach the
+  // crew immediately, not wait for the visitor to finish spelling their name.
+  // So we send on the first phone number, then push updates under the same
+  // lead id as the remaining details arrive.
+  const isNewLead = Boolean(finalize) && Boolean(contact?.phone);
+  const isEnrichment = typeof leadId === "string" && leadId.length > 0;
+
+  if (isNewLead || isEnrichment) {
+    const resolved = await extractContact(transcript, message, contact);
+    const stillMissing = ["name", "phone", "address"].filter(
+      (f) => !resolved[f as keyof Contact]?.trim(),
+    );
+
+    // On an enrichment pass, only bother the CRM if we actually learned
+    // something new — otherwise every subsequent chat message would fire a
+    // pointless update.
+    const previouslyMissing: string[] = Array.isArray(leadMissing) ? leadMissing : [];
+    const learnedSomething =
+      isNewLead || stillMissing.length < previouslyMissing.length;
+
+    if (!learnedSomething) {
+      return NextResponse.json({
+        ok: true,
+        reply,
+        leadId,
+        leadMissing: stillMissing,
+        mode: getHealth().mode,
+      });
+    }
+
     const intent = detectIntent(String(message || "") + " " + JSON.stringify(transcript || []));
     const language = detectLanguage(collectVisitorText(transcript, message));
     const needsBilingualFollowup = language === "es";
@@ -33,33 +62,116 @@ export async function POST(req: Request) {
     // Only pay for the summary call when the lead actually needs bilingual
     // follow-up — for English leads the transcript already reads natively.
     const bilingualSummary = needsBilingualFollowup
-      ? await summarizeForBilingualHandoff({ transcript, contact, intent })
+      ? await summarizeForBilingualHandoff({ transcript, contact: resolved, intent })
       : null;
 
-    const lead = normalizeLead("maggie_chat", contact, {
-      intent,
-      transcript,
-      channel: "maggie_ai_receptionist",
-      priority: intent === "storm" ? "urgent" : "standard",
-      detected_language: language,
-      needs_bilingual_followup: needsBilingualFollowup,
-      ...(bilingualSummary ? { bilingual_summary: bilingualSummary } : {}),
-    });
+    const lead = normalizeLead(
+      "maggie_chat",
+      resolved,
+      {
+        intent,
+        transcript,
+        channel: "maggie_ai_receptionist",
+        priority: intent === "storm" ? "urgent" : "standard",
+        detected_language: language,
+        needs_bilingual_followup: needsBilingualFollowup,
+        ...(bilingualSummary ? { bilingual_summary: bilingualSummary } : {}),
+      },
+      isEnrichment ? leadId : undefined,
+    );
     const deliveries = await dispatchToCRMs(lead);
+
     return NextResponse.json({
       ok: true,
+      reply,
       leadId: lead.id,
       priority: lead.priority,
+      isUpdate: lead.isUpdate,
       needsBilingualFollowup,
-      reply,
+      // The widget echoes this back so we can tell when new details land.
+      leadMissing: missingFields(lead),
       deliveries,
+      mode: getHealth().mode,
     });
   }
 
-  return NextResponse.json({ ok: true, reply });
+  return NextResponse.json({ ok: true, reply, mode: getHealth().mode });
 }
 
 type TranscriptItem = { role: "maggie" | "user"; text: string };
+
+type Contact = { name?: string; email?: string; phone?: string; address?: string };
+
+// ---------------------------------------------------------------------------
+// Contact extraction
+// ---------------------------------------------------------------------------
+// Visitors volunteer details however they like ("yes Jenee and my number is
+// 509...", "it's Dana, 1420 Cedar Hollow"). Regexes only catch the polite
+// phrasings, so names were being dropped and leads filed as "Unknown". Claude
+// already has the transcript — let it do the reading. Runs once per lead, at
+// finalization, not on every message.
+const CONTACT_SCHEMA = {
+  type: "object",
+  properties: {
+    name: { type: "string", description: "The visitor's full name. Empty string if they never gave one." },
+    phone: { type: "string", description: "The visitor's phone number, digits as they wrote them. Empty string if none." },
+    email: { type: "string", description: "The visitor's email address. Empty string if none." },
+    address: { type: "string", description: "The property address. Empty string if none." },
+  },
+  required: ["name", "phone", "email", "address"],
+  additionalProperties: false,
+} as const;
+
+async function extractContact(
+  transcript: TranscriptItem[] | undefined,
+  latest: unknown,
+  hint: Contact | undefined,
+): Promise<Contact> {
+  const fallback: Contact = hint || {};
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return fallback;
+
+  const lines = [
+    ...(Array.isArray(transcript) ? transcript : []),
+    { role: "user" as const, text: String(latest || "") },
+  ]
+    .map((m) => `${m.role === "maggie" ? "Maggie" : "Visitor"}: ${m.text}`)
+    .join("\n");
+
+  try {
+    const client = new Anthropic({ apiKey });
+    const res = await client.messages.create({
+      model: MODEL,
+      max_tokens: 300,
+      thinking: { type: "disabled" },
+      system:
+        "You extract contact details from a roofing company's chat transcript. " +
+        "Report ONLY what the visitor actually provided. If a detail was never " +
+        "given, return an empty string for it. Never guess, infer, or invent a " +
+        "value — a wrong phone number or address is worse than a blank one.",
+      output_config: { format: { type: "json_schema", schema: CONTACT_SCHEMA } },
+      messages: [{ role: "user", content: `Transcript:\n${lines}` }],
+    });
+
+    const text = res.content.find(
+      (b): b is Anthropic.TextBlock => b.type === "text",
+    )?.text;
+    if (!text) return fallback;
+    const parsed = JSON.parse(text) as Contact;
+
+    // Trust the extraction, but never let it blank out something the widget
+    // already captured.
+    return {
+      name: parsed.name?.trim() || fallback.name || "",
+      phone: parsed.phone?.trim() || fallback.phone || "",
+      email: parsed.email?.trim() || fallback.email || "",
+      address: parsed.address?.trim() || fallback.address || "",
+    };
+  } catch (err) {
+    console.error("[maggie] contact extraction failed, using widget capture:", err);
+    return fallback;
+  }
+}
 
 // Generate Maggie's next line. Uses Claude when a key is configured; on any
 // failure (or no key) it falls back to the rule-based replies below so the
@@ -82,9 +194,19 @@ async function generateReply(message: unknown, transcript?: TranscriptItem[]): P
     const textBlock = res.content.find(
       (b): b is Anthropic.TextBlock => b.type === "text",
     );
-    return textBlock?.text?.trim() || fallback();
+    const text = textBlock?.text?.trim();
+    if (!text) {
+      // Claude answered, but with nothing usable. Still a failure to serve.
+      recordClaudeFailure(new Error("Claude returned an empty response"));
+      return fallback();
+    }
+    recordClaudeSuccess();
+    return text;
   } catch (err) {
-    console.error("[maggie] Claude call failed, falling back to rule-based:", err);
+    // The fallback keeps the widget alive, but this must NOT be silent —
+    // an expired key or empty balance looks identical to a healthy site.
+    recordClaudeFailure(err);
+    console.error("[maggie] stack trace:", err);
     return fallback();
   }
 }
