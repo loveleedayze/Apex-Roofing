@@ -58,7 +58,7 @@ export default function Hero() {
               ["Same-day inspections", "Report + photos within hours, not days."],
               ["Insurance specialists", "We handle the claim paperwork for you."],
               ["No money down", "You pay nothing until the job is done right."],
-              ["English, Spanish & Korean", "Atendemos en español · 한국어로도 상담해 드려요."],
+              ["Five languages", "English · Español · 한국어 · Tiếng Việt · 中文 — Maggie answers in yours."],
               ["Instant online quote", "Ballpark your project in under a minute."],
             ].map(([t, d]) => (
               <li key={t} className="flex gap-3">

@@ -15,7 +15,7 @@ import {
   spokenReprompt,
   spokenSignoff,
   spokenSwitched,
-  koreanNumbersToDigits,
+  numberWordsToDigits,
   isLang,
   LANGS,
   LANGUAGE_NAME,
@@ -123,8 +123,10 @@ export async function POST(req: Request) {
   // every turn. We do it once a phone number has appeared (the crew can work
   // with that alone, even if the tab closes mid-sentence) and again at hangup.
   const full = [...transcript, { role: "user" as const, text: heard }];
-  // Korean number words count too: "오 공 구 ..." is a phone number.
-  const hasNumber = /\d[\d\s().-]{6,}/.test(koreanNumbersToDigits(full.map((t) => t.text).join(" ")));
+  // Number words count too: "오 공 구 ...", "五零九 ...", "năm không chín ..."
+  // are phone numbers.
+  // Seven digits, however they're grouped: "509, 555, 0142" has commas.
+  const hasNumber = /\d(?:[\s().,，、-]*\d){6,}/.test(numberWordsToDigits(full.map((t) => t.text).join(" ")));
   let lead: Partial<Awaited<ReturnType<typeof finalizeLead>>> = {};
 
   if (hasNumber || body.leadId) {
@@ -200,6 +202,8 @@ async function generateSpokenReply(
         en: "Thanks for calling. We'll be in touch shortly. Goodbye.",
         es: "Gracias por llamar. Lo contactamos muy pronto. Que tenga buen día.",
         ko: "전화 주셔서 감사합니다. 곧 연락드릴게요. 좋은 하루 되세요.",
+        vi: "Dạ, cảm ơn anh chị đã gọi. Tụi em sẽ liên lạc lại sớm. Chào anh chị ạ.",
+        zh: "感谢您的来电，我们会尽快联系您。再见。",
       }[lang],
       endCall,
     };

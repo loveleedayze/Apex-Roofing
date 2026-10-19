@@ -16,9 +16,11 @@ export const site = {
   // customer does, so the site says so in several places. They all read from
   // here — a client who doesn't want a language advertised changes these lines
   // and the claim disappears everywhere at once.
-  languages: "English, Español & 한국어",
+  languages: "English, Español, 한국어, Tiếng Việt & 中文",
   spanishLine: "Se habla español",
   koreanLine: "한국어 상담 가능",
+  vietnameseLine: "Có nói tiếng Việt",
+  chineseLine: "提供中文服务",
 };
 
 export const services = [

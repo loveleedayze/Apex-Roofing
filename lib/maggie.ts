@@ -7,7 +7,7 @@
 //      flow into the prompt automatically, so rebranding the site rebrands
 //      Maggie too. No AI/ML training required — this prompt IS her behavior.
 //
-// She works in English, Spanish and Korean. The prompts below tell her how to switch;
+// She works in English, Spanish, Korean, Vietnamese and Chinese. The prompts below tell her how to switch;
 // `detectLanguage` tells the transport which language to switch the speech
 // engine to, because a spoken call needs the right voice and the right
 // speech-to-text model, not just the right words.
@@ -29,9 +29,9 @@ export const CUSTOM_KNOWLEDGE = `
 - We help homeowners file and navigate insurance claims for storm and hail damage.
 - Financing options are available for qualifying customers.
 - Urgent storm or leak damage typically gets a same-day response.
-- We serve English-, Spanish- and Korean-speaking customers. A Spanish or Korean
-  speaker is helped in their own language on the spot — no interpreter, no
-  callback, no transfer.
+- We serve customers in English, Spanish, Korean, Vietnamese and Chinese
+  (Mandarin). A customer who speaks any of them is helped in their own language
+  on the spot — no interpreter, no callback, no transfer.
 `.trim();
 
 /**
@@ -39,15 +39,17 @@ export const CUSTOM_KNOWLEDGE = `
  * label below, its rules in LANGUAGE_RULES, its lines in the spoken and chat
  * fallbacks, and its speech tag in lib/voiceClient.ts.
  */
-export type Lang = "en" | "es" | "ko";
+export type Lang = "en" | "es" | "ko" | "vi" | "zh";
 
-export const LANGS: readonly Lang[] = ["en", "es", "ko"];
+export const LANGS: readonly Lang[] = ["en", "es", "ko", "vi", "zh"];
 
 /** How a language is recorded on a lead, so the callback gets the right person. */
 export const LANGUAGE_NAME: Record<Lang, string> = {
   en: "english",
   es: "spanish",
   ko: "korean",
+  vi: "vietnamese",
+  zh: "chinese",
 };
 
 export function isLang(value: unknown): value is Lang {
@@ -55,18 +57,18 @@ export function isLang(value: unknown): value is Lang {
 }
 
 // ---------------------------------------------------------------------------
-// Bilingual instructions
+// Multilingual instructions
 // ---------------------------------------------------------------------------
 // Shared by the chat prompt and the spoken prompt so the two can't drift
 // apart. What differs between typing and speaking stays in each prompt.
 
-const LANGUAGE_RULES = `LANGUAGE — YOU ARE FULLY TRILINGUAL: ENGLISH, SPANISH AND KOREAN:
-- Open in English. The moment the person uses Spanish or Korean, continue in that language. If they return to English, so do you. Follow them for as many switches as they make, including mid-conversation and mid-topic.
+const LANGUAGE_RULES = `LANGUAGE — YOU ARE FULLY MULTILINGUAL: ENGLISH, SPANISH, KOREAN, VIETNAMESE AND CHINESE (MANDARIN):
+- Open in English. The moment the person uses Spanish, Korean, Vietnamese or Chinese, continue in that language. If they return to English, so do you. Follow them for as many switches as they make, including mid-conversation and mid-topic.
 - Never announce the switch, never ask permission for it, never apologize for it, and never offer a menu ("for Spanish, press two"). Just answer in the language they used.
 - One language per reply. Do not answer in two, do not repeat yourself in translation, do not put another language in parentheses.
 - A switch changes the language and NOTHING else. Keep every detail they have already given you and pick up exactly where the conversation was — do not restart, do not re-introduce yourself, do not ask again for something they already told you in another language.
 - NEVER translate a proper noun: not the company name, not a person's name, not a street name. "Cedar Hollow" stays "Cedar Hollow" — a translated street name sends a crew to an address that does not exist.
-- Collect exactly the same details in every language — name, phone number, property address — and confirm them back just as carefully. A lead taken in Spanish or Korean must reach the crew as complete and as accurate as one taken in English.
+- Collect exactly the same details in every language — name, phone number, property address — and confirm them back just as carefully. A lead taken in any of these languages must reach the crew as complete and as accurate as one taken in English.
 
 SPANISH:
 - Your Spanish is the neutral Latin American Spanish a US roofing office actually uses: warm, direct, and the words homeowners use — techo, goteras, granizo, tormenta, presupuesto gratis, reclamo del seguro, tejas, canaletas, contratista.
@@ -78,7 +80,23 @@ KOREAN:
 - Use the words Korean-American customers actually use: 지붕, 누수 / 비가 새요, 우박, 폭풍 피해, 무료 견적, 보험 청구, 슁글, 거터(물받이), 평지붕, 가게 / 상가 지붕. Loanwords Korean speakers in the US use as-is (슁글, 거터, TPO) are fine.
 - Korean names are family name first (이수진 — the family name is 이). Keep the name exactly as given; do not reorder it.
 - Many Korean-speaking callers own a small business — a convenience store, a restaurant, a shop. A flat or commercial roof over a store is normal; a leak over a business that is open to customers is urgent.
-- US street addresses stay in English letters even inside a Korean sentence ("1420 Cedar Hollow 맞으세요?").`;
+- US street addresses stay in English letters even inside a Korean sentence ("1420 Cedar Hollow 맞으세요?").
+
+VIETNAMESE:
+- Always write full, correct Vietnamese with every tone mark. Vietnamese without its marks is hard to read and the voice cannot pronounce it.
+- Speak the way a polite young receptionist talks to customers: call yourself "em", call the customer "anh" or "chị" (use "anh chị" until you know which), open replies with "Dạ" and soften questions with "ạ". Never "mày", never "bạn" to a customer.
+- Use the words Vietnamese-American customers actually use: mái nhà, bị dột, mưa đá, bão, gió lớn, báo giá miễn phí, bảo hiểm, ngói / tấm lợp (many just say "shingle"), máng xối, mái bằng, tiệm.
+- Vietnamese names are family name first (Nguyễn Văn An — the family name is Nguyễn), but people are addressed by the LAST word, their given name: "anh An". Keep the full name exactly as given, tone marks included.
+- Many Vietnamese-speaking callers run a nail salon, a restaurant or a shop. A leak over a business that is open to customers is urgent.
+- US street addresses stay in English letters even inside a Vietnamese sentence ("1420 Cedar Hollow, đúng không ạ?").
+
+CHINESE:
+- Speak Mandarin and write Simplified characters (简体字). If the person writes in Traditional characters (繁體字) or in Cantonese, answer in Traditional characters.
+- Polite and warm: address the customer as 您, never 你. Once you know their family name, use it with 先生 or 女士 (王先生, 李女士).
+- Use the words Chinese-American customers actually use: 屋顶, 漏水 / 漏雨, 冰雹, 暴风损坏, 免费估价, 保险理赔, 沥青瓦, 排水槽, 平顶, 商铺 / 店面.
+- Chinese names are family name first (王丽 — the family name is 王). Many people also give an English name; keep both, exactly as given.
+- Many Chinese-speaking callers own a restaurant, a grocery or a shop. A leak over a business that is open to customers is urgent.
+- US street addresses stay in English letters and house numbers stay in digits even inside a Chinese sentence ("1420 Cedar Hollow，对吗？").`;
 
 // Builds Maggie's system prompt from the live business facts + custom knowledge.
 export function buildSystemPrompt(): string {
@@ -135,9 +153,11 @@ export function buildVoiceSystemPrompt(callerNumber?: string, language: Lang = "
   // is not set to, the caller hears the wrong accent and the next thing they
   // say gets transcribed by the wrong model.
   const currentLanguage = {
-    en: `\nThis call is currently in English. Switch to Spanish or Korean the moment the caller speaks it; the voice and the speech recognition follow you.\n`,
+    en: `\nThis call is currently in English. Switch to Spanish, Korean, Vietnamese or Chinese the moment the caller speaks it; the voice and the speech recognition follow you.\n`,
     es: `\nTHIS CALL IS CURRENTLY IN SPANISH — the voice speaking your words and the speech recognition hearing the caller are both set to Spanish. Speak Spanish. Change language only if the caller speaks another one to you.\n`,
     ko: `\nTHIS CALL IS CURRENTLY IN KOREAN — the voice speaking your words and the speech recognition hearing the caller are both set to Korean. Speak Korean. Change language only if the caller speaks another one to you.\n`,
+    vi: `\nTHIS CALL IS CURRENTLY IN VIETNAMESE — the voice speaking your words and the speech recognition hearing the caller are both set to Vietnamese. Speak Vietnamese. Change language only if the caller speaks another one to you.\n`,
+    zh: `\nTHIS CALL IS CURRENTLY IN MANDARIN CHINESE — the voice speaking your words and the speech recognition hearing the caller are both set to Mandarin. Speak Mandarin, written in Simplified characters. Change language only if the caller speaks another one to you.\n`,
   }[language];
 
   return `You are Maggie Mae, the receptionist for ${site.name}, a roofing company in ${site.city} (license ${site.license}, ${site.yearsInBusiness} years in business, rated ${site.googleRating} stars from ${site.googleReviewCount} reviews). You are answering a live CALL. Your words are read aloud by a speech synthesizer.
@@ -153,11 +173,11 @@ ${CUSTOM_KNOWLEDGE}
 ${LANGUAGE_RULES}
 
 OUT LOUD, ABOUT LANGUAGE:
-- A caller may open in Spanish or Korean, switch halfway through, or hand the phone to a family member who speaks another language. All of that is normal. Follow them without comment.
-- You are reading speech-to-text that may have been listening in the wrong language. If a turn arrives as garbled near-English that reads like mangled Spanish, or the caller asks for "español", answer in Spanish and carry on there. If the caller seems to be asking for "Korean", "hanguk-eo" or "hangungmal", answer in Korean and carry on there. The call screen also has language buttons, so a caller can switch it themselves.
+- A caller may open in any of these languages, switch halfway through, or hand the phone to a family member who speaks another language. All of that is normal. Follow them without comment.
+- You are reading speech-to-text that may have been listening in the wrong language. If a turn arrives as garbled near-English that reads like mangled Spanish, or the caller asks for "español", answer in Spanish and carry on there. If the caller seems to be asking for "Korean", "hanguk-eo" or "hangungmal", answer in Korean and carry on there. Likewise "Vietnamese" or "tiếng Việt" means Vietnamese, and "Chinese", "Mandarin", "Cantonese" or "zhongwen" means Chinese. The call screen also has language buttons, so a caller can switch it themselves.
 - Never put sentences in two languages in the same turn. One voice speaks the whole turn, and the other language comes out mispronounced.
-- Confirming details matters MORE across a language switch, not less. Read every name and address back, and if it is still unclear ask them to spell it — "letra por letra" in Spanish, "한 글자씩 말씀해 주시겠어요?" in Korean.
-- Numbers are where multilingual calls go wrong. A phone number or house number gets read back in the language you are speaking, digit by digit, before you move on. In Korean, read phone digits one at a time with 공 for zero ("오, 공, 구" for 509).
+- Confirming details matters MORE across a language switch, not less. Read every name and address back, and if it is still unclear ask them to spell it — "letra por letra" in Spanish, "한 글자씩 말씀해 주시겠어요?" in Korean, "anh chị đánh vần từng chữ giúp em được không ạ?" in Vietnamese, "能一个字母一个字母地拼给我吗？" in Chinese.
+- Numbers are where multilingual calls go wrong. A phone number or house number gets read back in the language you are speaking, digit by digit, before you move on. In Korean, read phone digits one at a time with 공 for zero ("오, 공, 구" for 509). In Vietnamese, one at a time ("năm, không, chín"). In Chinese, one at a time ("五、零、九").
 
 HOW TO SPEAK:
 - One or two SHORT sentences per turn. Under about 35 words. Long replies are dead air on a call.
@@ -186,6 +206,12 @@ Respond with ONLY the words you speak next — no preamble, no stage directions,
  * on the caller's first Spanish word, not before.
  */
 export function spokenGreeting(lang: Lang = "en"): string {
+  if (lang === "vi") {
+    return `Dạ, cảm ơn anh chị đã gọi ${site.name}, em là Maggie Mae. Anh chị gọi vì mái nhà bị bão hay bị dột, hay cần báo giá miễn phí ạ?`;
+  }
+  if (lang === "zh") {
+    return `感谢您致电${site.name}，我是Maggie Mae。请问您是因为暴风损坏或漏水打来的，还是需要免费估价？`;
+  }
   if (lang === "ko") {
     return `${site.name}에 전화 주셔서 감사합니다. 저는 매기 메이예요. 폭풍 피해나 누수 때문에 연락 주셨나요, 아니면 무료 견적이 필요하세요?`;
   }
@@ -201,6 +227,38 @@ export function spokenGreeting(lang: Lang = "en"): string {
  * must not be dropped into English at the exact moment something breaks.
  */
 export function spokenFallback(intent: Intent, lang: Lang = "en"): string {
+  if (lang === "vi") {
+    switch (intent) {
+      case "storm":
+        return "Dạ, nghe như mái nhà bị hư do bão, việc này gấp ạ. Anh chị cho em xin tên và địa chỉ để em cho người đến kiểm tra ngay hôm nay nhé?";
+      case "commercial":
+        return "Dạ, mái bằng hay mái tiệm ạ. Em đặt lịch cho người đến xem tận nơi. Anh chị tên gì ạ?";
+      case "gutters":
+        return "Dạ, em giúp anh chị về máng xối. Em đặt lịch đo miễn phí nhé. Anh chị tên gì ạ?";
+      case "estimate":
+        return "Dạ, em đặt lịch báo giá miễn phí, không ràng buộc gì. Cho em xin tên anh chị trước nhé?";
+      case "greeting":
+        return "Dạ, em chào anh chị. Mái nhà bị dột hay bị hư do bão, hay anh chị cần báo giá ạ?";
+      default:
+        return "Dạ, em giúp được ạ. Mình bị dột hay hư do bão cần gấp, hay chỉ cần báo giá bình thường ạ?";
+    }
+  }
+  if (lang === "zh") {
+    switch (intent) {
+      case "storm":
+        return "听起来是暴风造成的损坏，这个比较紧急。能告诉我您的姓名和房屋地址吗？我们今天就安排人上门检查。";
+      case "commercial":
+        return "明白了，是平顶或者店面的屋顶。我可以帮您安排上门查看。能告诉我您的姓名吗？";
+      case "gutters":
+        return "好的，排水槽的问题我来帮您，可以安排免费测量。能告诉我您的姓名吗？";
+      case "estimate":
+        return "我可以帮您安排免费估价，没有任何义务。请先告诉我您的姓名，好吗？";
+      case "greeting":
+        return "您好。请问是屋顶漏水或者暴风损坏，还是需要估价？";
+      default:
+        return "好的，我可以帮您。请问是紧急的漏水或暴风损坏，还是一般的估价？";
+    }
+  }
   if (lang === "ko") {
     switch (intent) {
       case "storm":
@@ -255,6 +313,8 @@ export function spokenReprompt(lang: Lang = "en"): string {
     en: "Sorry, I didn't catch that. Could you say it again?",
     es: "Perdón, no le escuché bien. ¿Me lo puede repetir?",
     ko: "죄송해요, 잘 못 들었어요. 다시 한 번 말씀해 주시겠어요?",
+    vi: "Dạ xin lỗi, em nghe chưa rõ. Anh chị nói lại giúp em được không ạ?",
+    zh: "不好意思，我没听清楚。您能再说一遍吗？",
   }[lang];
 }
 
@@ -267,6 +327,8 @@ export function spokenSwitched(lang: Lang = "en"): string {
     en: "Sure, we can keep going in English. Go ahead.",
     es: "Claro, seguimos en español. Dígame.",
     ko: "네, 한국어로 도와드릴게요. 말씀하세요.",
+    vi: "Dạ, mình nói tiếng Việt nhé. Anh chị cứ nói ạ.",
+    zh: "好的，我们用中文说。请讲。",
   }[lang];
 }
 
@@ -281,6 +343,8 @@ export function spokenSignoff(lang: Lang = "en"): string {
     en: `I can't hear you, so I'll let you go. Call us back any time at ${number}. Goodbye.`,
     es: `No lo escucho, así que lo dejo ir. Llámenos cuando guste al ${number}. Que tenga buen día.`,
     ko: `말씀이 들리지 않아서 이만 끊을게요. 언제든 ${number} 번으로 다시 전화 주세요. 좋은 하루 되세요.`,
+    vi: `Em không nghe được anh chị nói, nên em xin phép cúp máy. Anh chị gọi lại cho tụi em bất cứ lúc nào ở số ${number}. Chào anh chị ạ.`,
+    zh: `我听不到您的声音，先挂断了。欢迎随时拨打 ${number} 再联系我们。再见。`,
   }[lang];
 }
 
@@ -320,7 +384,7 @@ export type Contact = {
   email?: string;
   phone?: string;
   address?: string;
-  /** "english" | "spanish" | "korean" — the language this lead was taken in. The crew
+  /** "english" | "spanish" | "korean" | "vietnamese" | "chinese" — the language this lead was taken in. The crew
    *  needs to know who to put on the callback. */
   language?: string;
 };
@@ -339,28 +403,43 @@ function normalize(text: string): string {
     .replace(/[\u0300-\u036f]/g, "")
     // NFD also splits every Hangul syllable into its letters; put them back
     // together so the Korean patterns below still match.
-    .normalize("NFC");
+    .normalize("NFC")
+    // đ is its own letter, not d with a mark, so NFD leaves it alone.
+    .replace(/đ/g, "d");
 }
 
 export function detectIntent(text: string): Intent {
   const t = normalize(text);
+  // Vietnamese is matched WITH its tone marks: stripped, bão (storm), báo
+  // (report, as in báo giá — a quote) and bao (how much) are the same word.
+  const v = String(text).toLowerCase().normalize("NFC");
   // Urgency first, in both languages: a storm lead misfiled as "standard"
   // loses the same-day dispatch, whichever language it arrived in.
   if (/(storm|hail|wind|leak|emergency|urgent|damage|missing shingle)/.test(t)) return "storm";
   if (/(tormenta|granizo|gotera|goteras|goteando|se llueve|filtracion|emergencia|urgente|danos|dano en el techo|se cae el techo)/.test(t)) return "storm";
   if (/(폭풍|우박|태풍|강풍|누수|새요|새는|샌다|물이 떨|비가 들|급해|급한|긴급|피해|파손)/.test(t)) return "storm";
+  if (/(bão|mưa đá|dột|rò rỉ|gió lớn|hư hại|hư hỏng|khẩn cấp|gấp)/.test(v)) return "storm";
+  if (/(暴风|暴風|风暴|風暴|冰雹|台风|颱風|大风|大風|漏水|漏雨|渗水|滲水|紧急|緊急|损坏|損壞)/.test(t)) return "storm";
   if (/(tpo|flat|commercial|membrane|warehouse)/.test(t)) return "commercial";
   if (/(comercial|techo plano|membrana|bodega|almacen|local|negocio)/.test(t)) return "commercial";
   if (/(평지붕|상가|가게|매장|편의점|식당|창고|건물|상업)/.test(t)) return "commercial";
+  if (/(mái bằng|tiệm|cửa hàng|nhà hàng|kinh doanh|thương mại|nhà kho)/.test(v)) return "commercial";
+  if (/(平顶|平頂|商铺|商鋪|店面|商店|便利店|超市|餐馆|餐館|餐厅|餐廳|饭店|飯店|仓库|倉庫|商业|商業)/.test(t)) return "commercial";
   if (/(gutter|downspout)/.test(t)) return "gutters";
   if (/(canaleta|canaletas|canalon|bajante)/.test(t)) return "gutters";
   if (/(거터|물받이|홈통)/.test(t)) return "gutters";
+  if (/(máng xối|máng nước|ống xối)/.test(v)) return "gutters";
+  if (/(排水槽|天沟|天溝|檐槽|簷槽|落水管)/.test(t)) return "gutters";
   if (/(estimate|quote|price|cost|replace|install)/.test(t)) return "estimate";
   if (/(presupuesto|cotizacion|estimado|precio|costo|cuanto cuesta|reemplazar|instalar|cambiar el techo|techo nuevo|reparar|arreglar)/.test(t)) return "estimate";
   if (/(견적|가격|비용|얼마|교체|설치|수리|고치)/.test(t)) return "estimate";
+  if (/(báo giá|ước tính|bao nhiêu tiền|giá bao nhiêu|chi phí|thay mái|làm mái|sửa mái|sửa chữa|lắp đặt)/.test(v)) return "estimate";
+  if (/(估价|估價|报价|報價|价格|價格|多少钱|多少錢|费用|費用|更换|更換|安装|安裝|维修|維修|修理)/.test(t)) return "estimate";
   if (/(hi|hello|hey|good (morning|afternoon))/.test(t)) return "greeting";
   if (/(hola|buenos dias|buenas tardes|buenas noches)/.test(t)) return "greeting";
   if (/(안녕|여보세요)/.test(t)) return "greeting";
+  if (/(xin chào|chào anh|chào chị|chào em|a lô|alô)/.test(v)) return "greeting";
+  if (/(你好|您好|喂)/.test(t)) return "greeting";
   return "unknown";
 }
 
@@ -391,7 +470,25 @@ const ASKS_FOR_KOREAN = /\b(korean|hangul|hanguk ?eo|hangungmal)\b|한국어|한
 /** Hangul syllables and letters. An English or Spanish recognizer never
  *  produces them, and nobody types them by accident. */
 const HANGUL = /[\uac00-\ud7af\u1100-\u11ff\u3130-\u318f]/g;
-const LETTERS = /[a-z\u00c0-\u024f\uac00-\ud7af\u1100-\u11ff\u3130-\u318f]/gi;
+
+/** An explicit request for Vietnamese. */
+const ASKS_FOR_VIETNAMESE = /\b(vietnamese|tieng viet)\b/;
+
+/** An explicit request for Chinese. Cantonese speakers asking for their own
+ *  language get Chinese too — the closest thing she has. */
+const ASKS_FOR_CHINESE =
+  /\b(chinese|mandarin|cantonese|putonghua|zhongwen)\b|中文|普通话|普通話|国语|國語|华语|華語|汉语|漢語|广东话|廣東話|粤语|粵語/;
+
+/** Chinese characters. Like Hangul, decisive in quantity. */
+const HAN = /[\u4e00-\u9fff\u3400-\u4dbf]/g;
+
+/** Letters only Vietnamese uses — not the á é í ó ú it shares with Spanish.
+ *  A Vietnamese recognizer writes them on almost every word. */
+const VIETNAMESE_LETTERS =
+  /[ăâđêôơưàèìòùảẻỉỏủỷãẽĩõũỹạặậẹệịọộợụựỵấầẩẫắằẳẵếềểễốồổỗớờởỡứừửữỳ]/g;
+
+const LETTERS =
+  /[a-z\u00c0-\u024f\u1ea0-\u1ef9\uac00-\ud7af\u1100-\u11ff\u3130-\u318f\u4e00-\u9fff\u3400-\u4dbf]/gi;
 
 const STRONG_EN =
   /\b(english|roof|shingle|gutter|estimate|insurance|damage|leak|address|phone number|my name is|thank you|good morning|good afternoon)\b/;
@@ -418,11 +515,21 @@ export function detectLanguage(text: string): Lang | null {
   // An explicit request wins outright, in either language: someone asking
   // "do you speak Spanish?" in English wants the rest of this in Spanish.
   if (ASKS_FOR_KOREAN.test(t)) return "ko";
+  if (ASKS_FOR_VIETNAMESE.test(t)) return "vi";
+  if (ASKS_FOR_CHINESE.test(t)) return "zh";
   if (ASKS_FOR_SPANISH.test(t)) return "es";
   // Hangul is decisive — but someone writing Korean still types an English
   // street name, so it only has to be a real share of the letters.
   const hangul = count(raw, HANGUL);
-  if (hangul >= 2 && hangul * 3 >= count(raw, LETTERS)) return "ko";
+  const letters = count(raw, LETTERS);
+  if (hangul >= 2 && hangul * 3 >= letters) return "ko";
+  const han = count(raw, HAN);
+  if (han >= 2 && han * 3 >= letters) return "zh";
+  // Vietnamese marks before Spanish ones: Vietnamese uses á é í ó ú too. A
+  // Vietnamese name dropped into an English sentence ("my name is Trần") is
+  // outvoted by the English around it.
+  const viet = count(raw.toLowerCase().normalize("NFC"), VIETNAMESE_LETTERS);
+  if (viet >= 2 && viet > (STRONG_EN.test(t) ? 2 : 0) + count(t, WEAK_EN)) return "vi";
   // Accents and ñ survive transcription only when the recognizer was already
   // listening in Spanish, and nobody types them by accident. Decisive.
   if (/[ñáéíóúü¿¡]/.test(raw.toLowerCase())) return "es";
@@ -468,7 +575,7 @@ const CONTACT_SCHEMA = {
     name: {
       type: "string",
       description:
-        "The person's full name exactly as they gave it, including both surnames if they gave two. A name given in Korean script is kept in Hangul with its romanization in parentheses, e.g. \"이수진 (Lee Soo-jin)\". Empty string if they never gave one.",
+        "The person's full name exactly as they gave it, including both surnames if they gave two. A name given in Korean script is kept in Hangul with its romanization in parentheses, e.g. \"이수진 (Lee Soo-jin)\". A name in Chinese characters is kept with its pinyin in parentheses, e.g. \"王丽 (Wang Li)\". A Vietnamese name keeps every tone mark, e.g. \"Nguyễn Văn An\". Empty string if they never gave one.",
     },
     phone: { type: "string", description: "Their phone number, as digits. Empty string if none." },
     email: { type: "string", description: "Their email address. Empty string if none." },
@@ -480,7 +587,7 @@ const CONTACT_SCHEMA = {
     language: {
       type: "string",
       description:
-        "\"spanish\" if this person spoke or wrote mainly in Spanish, \"korean\" if mainly in Korean, otherwise \"english\".",
+        "\"spanish\", \"korean\", \"vietnamese\" or \"chinese\" if this person spoke or wrote mainly in that language, otherwise \"english\".",
     },
   },
   required: ["name", "phone", "email", "address", "language"],
@@ -553,6 +660,96 @@ export function koreanNumbersToDigits(text: string): string {
   return out;
 }
 
+// --- Chinese and Vietnamese numbers --------------------------------------
+//
+// Same reason as the Korean converter: a phone number must not depend on the
+// model reading number words correctly.
+
+const ZH_DIGIT: Record<string, number> = {
+  零: 0, 〇: 0, 幺: 1, 一: 1, 二: 2, 两: 2, 兩: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9,
+};
+const ZH_UNIT: Record<string, number> = { 十: 10, 百: 100, 千: 1000 };
+
+/** "一千四百二十" -> 1420, "一千四" -> 1400, "一千零五" -> 1005. Null if it
+ *  isn't a number word. */
+function chineseNumber(word: string): number | null {
+  // 千万 ("whatever you do"), 万一 ("in case"), 百万 — words, not numbers.
+  if (!/[零〇幺一二两兩三四五六七八九]/.test(word) && word[0] !== "十") return null;
+  if (word[0] === "万" || word[0] === "萬" || word.startsWith("千万") || word.startsWith("千萬")) return null;
+  let total = 0;
+  let group = 0;
+  let digit: number | null = null;
+  let lastUnit = Infinity; // units only step down, as in the Korean parser
+  let prevUnit = 0; // the unit just before the trailing digit
+  let zero = false;
+  let sawWan = false;
+  for (const ch of word) {
+    if (ch in ZH_DIGIT) {
+      if (ZH_DIGIT[ch] === 0) {
+        if (digit !== null) return null;
+        zero = true;
+        continue;
+      }
+      if (digit !== null) return null;
+      digit = ZH_DIGIT[ch];
+    } else if (ch in ZH_UNIT) {
+      if (ZH_UNIT[ch] >= lastUnit) return null;
+      lastUnit = prevUnit = ZH_UNIT[ch];
+      group += (digit ?? 1) * ZH_UNIT[ch];
+      digit = null;
+      zero = false;
+    } else if (ch === "万" || ch === "萬") {
+      if (sawWan) return null;
+      sawWan = true;
+      total += (group + (digit ?? 0) || 1) * 10000;
+      group = 0;
+      digit = null;
+      lastUnit = Infinity;
+      prevUnit = 10000;
+      zero = false;
+    } else {
+      return null;
+    }
+  }
+  // "一千四" is 1400, not 1004: a bare digit after a unit is the next place down.
+  let tail = digit ?? 0;
+  if (digit !== null && !zero && prevUnit > 10) tail = digit * (prevUnit / 10);
+  return total + group + tail;
+}
+
+const VI_DIGIT: Record<string, number> = {
+  không: 0, một: 1, hai: 2, ba: 3, bốn: 4, năm: 5, sáu: 6, bảy: 7, bẩy: 7, tám: 8, chín: 9,
+};
+
+/**
+ * Number words to digits in all three languages that need it — Korean,
+ * Chinese and Vietnamese. Only unambiguous shapes convert: a run of three or
+ * more single digits (how a phone number is read out) or, in Korean and
+ * Chinese, a compound with a unit. "Hai năm" (two years) stays as it is.
+ */
+export function numberWordsToDigits(text: string): string {
+  let out = koreanNumbersToDigits(text);
+  const zhDigit = "[零〇幺一二两兩三四五六七八九]";
+  out = out.replace(
+    new RegExp(`${zhDigit}(?:[\\s,，、.-]*${zhDigit}){2,}`, "g"),
+    (run) => run.replace(new RegExp(zhDigit, "g"), (d) => String(ZH_DIGIT[d])).replace(/(\d)[\s,，、.-]+(?=\d)/g, "$1"),
+  );
+  out = out.replace(/[零〇幺一二两兩三四五六七八九十百千万萬]{2,}/g, (word) => {
+    if (!/[十百千万萬]/.test(word)) return word;
+    const n = chineseNumber(word);
+    return n === null ? word : String(n);
+  });
+  const viWord = `(?:${Object.keys(VI_DIGIT).join("|")})`;
+  out = out.normalize("NFC").replace(
+    new RegExp(`(?<![\\p{L}])${viWord}(?:[\\s,.-]+${viWord}){2,}(?![\\p{L}])`, "giu"),
+    (run) =>
+      run
+        .replace(new RegExp(viWord, "giu"), (w) => String(VI_DIGIT[w.toLowerCase()]))
+        .replace(/(\d)\s+(?=\d)/g, "$1"),
+  );
+  return out;
+}
+
 export async function extractContact(
   transcript: TranscriptItem[] | undefined,
   latest: unknown,
@@ -566,7 +763,7 @@ export async function extractContact(
     ...(Array.isArray(transcript) ? transcript : []),
     ...(String(latest || "").trim() ? [{ role: "user" as const, text: String(latest) }] : []),
   ]
-    .map((m) => `${m.role === "maggie" ? "Maggie" : "Caller"}: ${koreanNumbersToDigits(m.text)}`)
+    .map((m) => `${m.role === "maggie" ? "Maggie" : "Caller"}: ${numberWordsToDigits(m.text)}`)
     .join("\n");
 
   try {
@@ -577,8 +774,8 @@ export async function extractContact(
       thinking: { type: "disabled" },
       system:
         "You extract contact details from a roofing company's conversation transcript. " +
-        "The conversation may be in English, Spanish or Korean, or switch between them " +
-        "mid-call; read all three equally well and capture the same details either way. " +
+        "The conversation may be in English, Spanish, Korean, Vietnamese or Chinese, or " +
+        "switch between them mid-call; read them all equally well and capture the same details. " +
         "Report ONLY what the person actually provided. If a detail was never " +
         "given, return an empty string for it. Never guess, infer, or invent a " +
         "value — a wrong phone number or address is worse than a blank one. " +
@@ -595,7 +792,12 @@ export async function extractContact(
         "address exactly as given. Korean speakers often say an English street name " +
         "in Korean sounds ('시더 할로우'): write it as the real street name in English " +
         "letters ('Cedar Hollow'). Korean numbers ('천사백이십', '오 공 구') become " +
-        "digits. Keep a Korean name in Hangul and add its romanization in parentheses.",
+        "digits. Keep a Korean name in Hangul and add its romanization in parentheses. " +
+        "Vietnamese and Chinese speakers do the same with street names ('锡达霍洛', " +
+        "'xi-đa hô-lô'): write the real street name in English letters. Vietnamese " +
+        "('năm không chín') and Chinese ('五零九', '一千四百二十') numbers become digits. " +
+        "Keep a Vietnamese name with all its tone marks. Keep a Chinese name in " +
+        "characters and add its pinyin in parentheses.",
       output_config: { format: { type: "json_schema", schema: CONTACT_SCHEMA } },
       messages: [{ role: "user", content: `Transcript:\n${lines}` }],
     });

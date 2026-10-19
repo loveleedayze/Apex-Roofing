@@ -148,17 +148,19 @@ function toClaudeMessages(
 // ---------------------------------------------------------------------------
 // Intent detection, language detection, and transcript-reading now live in
 // lib/maggie.ts, shared with the call widget so a storm lead is tagged urgent
-// whether it arrives by chat or by voice, in English, Spanish or Korean. These
+// whether it arrives by chat or by voice, in any of her five languages. These
 // canned lines are chat-specific — the spoken channel has its own, written to
 // be heard rather than read.
 //
-// The Spanish and Korean sets are not a translation exercise: this is what a visitor sees
+// The non-English sets are not a translation exercise: this is what a visitor sees
 // when the API key has died mid-demo, so it has to sound like the same
 // receptionist, not like a machine that gave up and switched languages.
 
 function replyFor(intent: Intent, finalized: boolean, lang: Lang = "en"): string {
   if (lang === "es") return replyForEs(intent, finalized);
   if (lang === "ko") return replyForKo(intent, finalized);
+  if (lang === "vi") return replyForVi(intent, finalized);
+  if (lang === "zh") return replyForZh(intent, finalized);
   if (finalized) {
     return intent === "storm"
       ? "Thanks! I've flagged this as URGENT storm damage and dispatched it to our on-call crew — expect a call within 15 minutes. 🚨"
@@ -221,5 +223,49 @@ function replyForKo(intent: Intent, finalized: boolean): string {
       return `안녕하세요! 저는 ${site.name}의 AI 안내원 매기 메이예요. 누수나 폭풍 피해가 있으세요, 아니면 지붕 견적이 필요하세요?`;
     default:
       return "네, 도와드릴게요! 맞는 팀에 연결해 드리려면 — 급한 누수나 폭풍 피해인가요, 아니면 슁글, 메탈, TPO, 거터 같은 일반 견적인가요?";
+  }
+}
+
+function replyForVi(intent: Intent, finalized: boolean): string {
+  if (finalized) {
+    return intent === "storm"
+      ? "Dạ xong rồi ạ! Em đã đánh dấu là hư do bão KHẨN CẤP và chuyển cho đội trực — trong khoảng 15 phút sẽ có người gọi anh chị. 🚨"
+      : "Dạ được rồi ạ — em đã đặt lịch báo giá miễn phí và gửi thông tin cho bộ phận lên lịch. Tụi em sẽ liên lạc anh chị sớm! 📆";
+  }
+  switch (intent) {
+    case "storm":
+      return "Ôi, nghe như mái nhà bị hư do bão rồi ạ. Việc này gấp, mình làm nhanh nhé. Anh chị cho em xin tên, số điện thoại và địa chỉ để em cho người đến kiểm tra khẩn cấp hôm nay ạ?";
+    case "commercial":
+      return "Dạ hiểu rồi ạ — mái bằng hay mái tiệm, cơ sở kinh doanh. Đội thương mại của tụi em sửa và thay toàn bộ mái màng. Mái khoảng bao nhiêu feet vuông, và anh chị cho em xin tên với số điện thoại để hẹn đến xem ạ?";
+    case "gutters":
+      return "Dạ, em giúp anh chị về máng xối ạ! Tụi em lắp máng xối nhôm liền mạch và lưới chắn lá. Em đặt lịch đo miễn phí nhé? Em chỉ cần tên và số điện thoại của anh chị.";
+    case "estimate":
+      return "Dạ được ạ — em đặt lịch báo giá miễn phí, không ràng buộc. Mình cần sửa hay thay mái mới ạ? Và anh chị cho em xin tên với số điện thoại nhé?";
+    case "greeting":
+      return `Dạ chào anh chị! Em là Maggie Mae, lễ tân AI của ${site.name}. Mái nhà bị dột hay hư do bão, hay anh chị cần báo giá mái nhà ạ?`;
+    default:
+      return "Dạ, em giúp được ạ! Để chuyển đúng đội — mình bị dột hay hư do bão cần gấp, hay cần báo giá bình thường cho ngói, mái tôn, TPO hay máng xối ạ?";
+  }
+}
+
+function replyForZh(intent: Intent, finalized: boolean): string {
+  if (finalized) {
+    return intent === "storm"
+      ? "好的！我已经把这标为紧急暴风损坏，并转给了值班施工队——大约15分钟内会有人给您打电话。🚨"
+      : "好的——已经为您预约了免费估价，资料也发给了排期团队。我们很快会联系您！📆";
+  }
+  switch (intent) {
+    case "storm":
+      return "哎呀，听起来是暴风造成的损坏。这个很紧急，我们抓紧处理。能告诉我您的姓名、电话和地址吗？我们今天就安排紧急检查。";
+    case "commercial":
+      return "明白了——是平顶或者店面的屋顶。我们的商业团队做防水膜维修和整体翻新。屋顶大约多少平方英尺？方便留下您的姓名和电话，我们安排上门查看吗？";
+    case "gutters":
+      return "排水槽的问题我很乐意帮您！我们安装无缝铝制排水槽和防落叶网。帮您安排免费测量好吗？只需要您的姓名和电话。";
+    case "estimate":
+      return "好的——我帮您安排免费估价，没有任何义务。是维修还是整体更换？方便留下您的姓名和电话吗？";
+    case "greeting":
+      return `您好！我是Maggie Mae，${site.name}的AI前台。请问是屋顶漏水或暴风损坏，还是需要屋顶估价？`;
+    default:
+      return "好的，我可以帮您！为了转给合适的团队——请问是紧急的漏水或暴风损坏，还是沥青瓦、金属屋顶、TPO或排水槽的一般估价？";
   }
 }

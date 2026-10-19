@@ -32,6 +32,12 @@ export default function Header() {
             <span className="hidden items-center gap-1 text-white/80 lg:flex" lang="ko">
               {site.koreanLine}
             </span>
+            <span className="hidden items-center gap-1 text-white/80 xl:flex" lang="vi">
+              {site.vietnameseLine}
+            </span>
+            <span className="hidden items-center gap-1 text-white/80 xl:flex" lang="zh-Hans">
+              {site.chineseLine}
+            </span>
           </div>
 
           {/* Right: high-contrast URGENT call button — native tel: on tap */}

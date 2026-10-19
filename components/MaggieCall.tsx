@@ -30,6 +30,8 @@ const CALL_LANGUAGES: { code: CallLanguage; label: string; start: string }[] = [
   { code: "en", label: "English", start: "Start the call" },
   { code: "es", label: "Español", start: "Llamar en español" },
   { code: "ko", label: "한국어", start: "한국어로 통화하기" },
+  { code: "vi", label: "Tiếng Việt", start: "Gọi bằng tiếng Việt" },
+  { code: "zh", label: "中文", start: "用中文通话" },
 ];
 
 export interface MaggieCallProps {
@@ -347,11 +349,17 @@ function ReadyBody({
       <p className="mt-1 text-sm leading-relaxed text-neutral-600" lang="ko">
         한국어로 말씀하셔도 돼요 — 한국어로 답해 드려요.
       </p>
+      <p className="mt-1 text-sm leading-relaxed text-neutral-600" lang="vi">
+        Anh chị có thể nói tiếng Việt — Maggie sẽ trả lời bằng tiếng Việt.
+      </p>
+      <p className="mt-1 text-sm leading-relaxed text-neutral-600" lang="zh-Hans">
+        您也可以说中文——她会用中文回答您。
+      </p>
 
       <ul className="mt-4 space-y-1.5">
         {[
           "Answers 24/7, first ring",
-          "English, Spanish or Korean — she switches when you do",
+          "English, Spanish, Korean, Vietnamese or Chinese — she switches when you do",
           "Speaks freely — nothing is scripted",
           "Hang up whenever you like",
         ].map(
@@ -449,7 +457,7 @@ function LiveBody({
   return (
     <div>
       {onLanguage && (
-        <div className="mb-3 flex justify-center gap-1" role="group" aria-label="Call language">
+        <div className="mb-3 flex flex-wrap justify-center gap-1" role="group" aria-label="Call language">
           {CALL_LANGUAGES.map((l) => (
             <button
               key={l.code}
@@ -457,7 +465,7 @@ function LiveBody({
               lang={l.code}
               aria-pressed={language === l.code}
               onClick={() => onLanguage(l.code)}
-              className={`rounded-full px-3 py-1 text-[12px] font-bold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 ${
+              className={`rounded-full px-2.5 py-1 text-[12px] font-bold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 ${
                 language === l.code
                   ? "bg-neutral-900 text-white"
                   : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"

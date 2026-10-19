@@ -13,11 +13,11 @@ const now = () =>
 const SEED: Msg[] = [
   {
     from: "maggie",
-    // The Spanish and Korean invitations are part of the greeting rather than a
+    // The other-language invitations are part of the greeting rather than a
     // banner: a visitor should see, in the first thing Maggie says, that
     // writing back in their language will work. She follows whichever language
     // they answer in.
-    text: `Hi, I'm Maggie Mae, your AI Receptionist at ${site.name}! 👋 Are you dealing with storm/leak damage, or looking for a routine roofing estimate? — ¿Prefiere español? Escríbame en español. · 한국어로 쓰셔도 돼요.`,
+    text: `Hi, I'm Maggie Mae, your AI Receptionist at ${site.name}! 👋 Are you dealing with storm/leak damage, or looking for a routine roofing estimate? — ¿Prefiere español? Escríbame en español. · 한국어로 쓰셔도 돼요. · Có thể nhắn bằng tiếng Việt. · 也可以用中文。`,
     time: "9:14 AM",
   },
   {
@@ -149,7 +149,7 @@ export default function MaggieChat() {
             </div>
           ) : (
             <div className="bg-orange-50 px-4 py-2 text-center text-xs font-semibold text-brand-accentDark">
-              Hi, I&apos;m Maggie Mae, your AI Receptionist. Hablo español · 한국어 가능
+              Hi, I&apos;m Maggie Mae, your AI Receptionist. Hablo español · 한국어 · Tiếng Việt · 中文
             </div>
           )}
 
@@ -171,7 +171,7 @@ export default function MaggieChat() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && send()}
-              placeholder="English, español, 한국어…"
+              placeholder="English, español, 한국어, tiếng Việt, 中文…"
               className="flex-1 rounded-full border border-slate-200 px-4 py-2 text-sm outline-none focus:border-brand-accent"
             />
             <button

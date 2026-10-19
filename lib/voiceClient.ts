@@ -44,7 +44,9 @@ export interface VoiceClientHandlers {
 }
 
 /** Languages the call widget offers buttons for. Matches Lang in lib/maggie.ts. */
-export type CallLanguage = "en" | "es" | "ko";
+export type CallLanguage = "en" | "es" | "ko" | "vi" | "zh";
+
+const CALL_LANGS: readonly CallLanguage[] = ["en", "es", "ko", "vi", "zh"];
 
 export interface VoiceClient {
   /** Human-readable, shown in dev warnings and the demo badge. */
@@ -221,17 +223,27 @@ type RecognitionCtor = new () => RecognitionLike;
 type Phrases = Record<"reprompt" | "signoff" | "switched", Record<string, string>>;
 
 /** Speech tag for each language — the recognizer and the voice both use it. */
-const SPEECH_TAG: Record<CallLanguage, string> = { en: "en-US", es: "es-US", ko: "ko-KR" };
+const SPEECH_TAG: Record<CallLanguage, string> = {
+  en: "en-US",
+  es: "es-US",
+  ko: "ko-KR",
+  vi: "vi-VN",
+  zh: "zh-CN", // Mandarin
+};
 
 /** Preferred voice regions, best first. US variants for a US business. */
 const VOICE_REGIONS: Record<CallLanguage, string[]> = {
   en: ["en-us"],
   es: ["es-us", "es-mx", "es-419"],
   ko: ["ko-kr"],
+  vi: ["vi-vn"],
+  // Mainland Mandarin first, then Taiwan Mandarin. A Cantonese voice reading
+  // Mandarin text is the last resort.
+  zh: ["zh-cn", "zh-tw"],
 };
 
-function asCallLanguage(value: unknown): CallLanguage | null {
-  return value === "en" || value === "es" || value === "ko" ? value : null;
+export function asCallLanguage(value: unknown): CallLanguage | null {
+  return (CALL_LANGS as readonly unknown[]).includes(value) ? (value as CallLanguage) : null;
 }
 
 function recognitionCtor(): RecognitionCtor | null {
@@ -322,6 +334,14 @@ export function createBrowserVoiceClient(config: BrowserVoiceConfig = {}): Voice
           utterance.lang = bcp47(lang);
           const voice = pickVoice(lang);
           if (voice) utterance.voice = voice;
+          // This device has voices, just none in this language (Vietnamese
+          // is missing from desktop Chrome, for one). An English voice
+          // reading Vietnamese is gibberish, so stay quiet: the words are
+          // already on screen. Give the caller time to read them.
+          if (!voice && lang !== "en" && window.speechSynthesis.getVoices().length) {
+            setTimeout(resolve, Math.min(1500 + text.length * 60, 9000));
+            return;
+          }
           utterance.rate = 1.02; // receptionist brisk, not hurried
 
           // Chrome sometimes never fires either event — a known bug that
@@ -616,16 +636,22 @@ const FALLBACK_PHRASES: Record<keyof Phrases, Record<CallLanguage, string>> = {
     en: "Sorry, I didn't catch that. Could you say it again?",
     es: "Perdón, no le escuché bien. ¿Me lo puede repetir?",
     ko: "죄송해요, 잘 못 들었어요. 다시 한 번 말씀해 주시겠어요?",
+    vi: "Dạ xin lỗi, em nghe chưa rõ. Anh chị nói lại giúp em được không ạ?",
+    zh: "不好意思，我没听清楚。您能再说一遍吗？",
   },
   signoff: {
     en: "I can't hear you, so I'll let you go. Goodbye.",
     es: "No lo escucho, así que lo dejo ir. Que tenga buen día.",
     ko: "말씀이 들리지 않아서 이만 끊을게요. 좋은 하루 되세요.",
+    vi: "Em không nghe được anh chị nói, nên em xin phép cúp máy. Chào anh chị ạ.",
+    zh: "我听不到您的声音，先挂断了。再见。",
   },
   switched: {
     en: "Sure, we can keep going in English. Go ahead.",
     es: "Claro, seguimos en español. Dígame.",
     ko: "네, 한국어로 도와드릴게요. 말씀하세요.",
+    vi: "Dạ, mình nói tiếng Việt nhé. Anh chị cứ nói ạ.",
+    zh: "好的，我们用中文说。请讲。",
   },
 };
 

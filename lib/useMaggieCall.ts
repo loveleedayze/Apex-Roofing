@@ -11,6 +11,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CallLanguage, TranscriptLine, VoiceClient, VoiceClientFactory } from "@/lib/voiceClient";
+import { asCallLanguage } from "@/lib/voiceClient";
 
 export type CallState =
   | "ready" // expanded, nothing started yet
@@ -194,7 +195,7 @@ export function useMaggieCall({
   const start = useCallback(async (requested?: CallLanguage) => {
     // Guarded because start is also wired straight to onClick, which hands
     // it a click event rather than a language.
-    const picked = ["en", "es", "ko"].includes(requested as string) ? requested : undefined;
+    const picked = asCallLanguage(requested) ?? undefined;
     setLanguageState(picked ?? null);
     setError(null);
     setTranscript([]);
