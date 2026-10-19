@@ -1,6 +1,7 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MaggieChat from "@/components/MaggieChat";
+import MaggieCall from "@/components/MaggieCall";
 
 /**
  * Shell for the public marketing site. This is a route *group*, so it adds no
@@ -16,8 +17,11 @@ export default function MarketingLayout({
       <Header />
       <main>{children}</main>
       <Footer />
-      {/* Persistent AI receptionist — anchored bottom-LEFT */}
+      {/* Maggie has two front doors on the site, in opposite corners so they
+          never overlap: text chat on the left, a live voice call on the right.
+          Both route into the same brain and the same CRM pipeline. */}
       <MaggieChat />
+      <MaggieCall />
     </>
   );
 }

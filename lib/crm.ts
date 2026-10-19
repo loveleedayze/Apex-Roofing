@@ -6,7 +6,7 @@
 // "outbound" call so the demo is transparent about what would be sent.
 // ---------------------------------------------------------------------------
 
-export type LeadSource = "quote_widget" | "estimate_form" | "maggie_chat";
+export type LeadSource = "quote_widget" | "estimate_form" | "maggie_chat" | "maggie_voice";
 
 export interface NormalizedLead {
   id: string;
@@ -74,8 +74,21 @@ export function normalizeLead(
 
 // ---- CRM-specific payload adapters --------------------------------------
 
+/**
+ * The language a lead was taken in, when it isn't English — "spanish",
+ * "korean". The roofer needs to see this before dialling, so it goes on the
+ * record as a tag and at the top of the notes, not buried in the transcript.
+ */
+function followupLanguage(lead: NormalizedLead): string | null {
+  const lang = String(lead.context.language || "").toLowerCase();
+  return lang && lang !== "english" ? lang : null;
+}
+
 /** JobNimbus "Contact + Job" create/update payload. */
 export function toJobNimbusPayload(lead: NormalizedLead) {
+  const lang = followupLanguage(lead);
+  const tags: string[] = [lead.source, lead.priority];
+  if (lang) tags.push(`${lang}-speaker`);
   return {
     external_id: lead.id, // upsert key — keeps revisions off the duplicate pile
     record_type_name: "Lead",
@@ -84,14 +97,16 @@ export function toJobNimbusPayload(lead: NormalizedLead) {
     home_phone: lead.contact.phone,
     address_line1: lead.contact.address,
     status_name: lead.priority === "urgent" ? "Storm - Hot" : "New Lead",
-    source_name: "Website",
+    source_name: lead.source === "maggie_voice" ? "Inbound Call" : "Website",
     description: JSON.stringify(lead.context),
-    tags: [lead.source, lead.priority],
+    tags,
   };
 }
 
 /** AccuLynx "Lead" create/update payload. */
 export function toAccuLynxPayload(lead: NormalizedLead) {
+  const lang = followupLanguage(lead);
+  const notes = JSON.stringify(lead.context, null, 2);
   return {
     externalId: lead.id, // upsert key
     firstName: lead.contact.name.split(" ")[0],
@@ -99,9 +114,10 @@ export function toAccuLynxPayload(lead: NormalizedLead) {
     email: lead.contact.email,
     cellPhone: lead.contact.phone,
     address: lead.contact.address,
-    leadSource: "Web Form",
+    leadSource: lead.source === "maggie_voice" ? "Phone Call" : "Web Form",
     milestone: lead.priority === "urgent" ? "Inspection - Urgent" : "New Lead",
-    notes: JSON.stringify(lead.context, null, 2),
+    notes: lang ? `[CALL BACK IN ${lang.toUpperCase()}]
+${notes}` : notes,
   };
 }
 

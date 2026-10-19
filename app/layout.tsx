@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     default: `${site.name} — Premium Roofing & Storm Repair | ${site.city}`,
     template: `%s | ${site.name}`,
   },
-  description: `${site.name} installs asphalt shingle, metal, and flat TPO commercial roofs plus seamless gutters. ${site.googleRating}★ rated, ${site.yearsInBusiness}+ years, free estimates and 24/7 storm response.`,
+  description: `${site.name} installs asphalt shingle, metal, and flat TPO commercial roofs plus seamless gutters. ${site.googleRating}★ rated, ${site.yearsInBusiness}+ years, free estimates and 24/7 storm response. ${site.spanishLine}.`,
   keywords: [
     "roofing",
     "roof repair",
@@ -16,6 +16,13 @@ export const metadata: Metadata = {
     "TPO commercial roofing",
     "gutter installation",
     "storm damage roof",
+    // Spanish-language searches for the same jobs. A homeowner googling
+    // "techador que hable español" is the customer this whole feature is for.
+    "se habla español",
+    "techador",
+    "reparación de techos",
+    "contratista de techos",
+    "daño por granizo",
   ],
   openGraph: {
     title: `${site.name} — Premium Roofing`,

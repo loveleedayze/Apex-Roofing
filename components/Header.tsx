@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Star, Phone, Menu, X, ShieldCheck, ChevronRight } from "lucide-react";
+import { Star, Phone, Menu, X, ShieldCheck, ChevronRight, Languages } from "lucide-react";
 import { site, services } from "@/lib/site";
 
 export default function Header() {
@@ -22,6 +22,15 @@ export default function Header() {
             <span className="hidden items-center gap-1 text-white/80 sm:flex">
               <ShieldCheck size={16} className="text-brand-gold" />
               Over {site.yearsInBusiness} Years in Business
+            </span>
+            {/* The first thing a Spanish-speaking visitor should see, before
+                they decide whether this site is for them. */}
+            <span className="hidden items-center gap-1 text-white/80 md:flex" lang="es">
+              <Languages size={16} className="text-brand-gold" />
+              {site.spanishLine}
+            </span>
+            <span className="hidden items-center gap-1 text-white/80 lg:flex" lang="ko">
+              {site.koreanLine}
             </span>
           </div>
 

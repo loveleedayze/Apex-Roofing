@@ -12,6 +12,13 @@ export const site = {
   license: "TX-RC-0098421",
   // Short header sub-label under the logo.
   tagline: "Roofing • Storm • Gutters",
+  // Maggie answers in each of these languages and switches the moment a
+  // customer does, so the site says so in several places. They all read from
+  // here — a client who doesn't want a language advertised changes these lines
+  // and the claim disappears everywhere at once.
+  languages: "English, Español & 한국어",
+  spanishLine: "Se habla español",
+  koreanLine: "한국어 상담 가능",
 };
 
 export const services = [

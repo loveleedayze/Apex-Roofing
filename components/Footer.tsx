@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Phone, Mail, MapPin, Star, ShieldCheck } from "lucide-react";
+import { Phone, Mail, MapPin, Star, ShieldCheck, Languages } from "lucide-react";
 import { site, services } from "@/lib/site";
 
 export default function Footer() {
@@ -43,6 +43,9 @@ export default function Footer() {
               <a href={`mailto:${site.email}`} className="flex items-center gap-2 hover:text-brand-accent">
                 <Mail size={16} /> {site.email}
               </a>
+            </li>
+            <li className="flex items-center gap-2" lang="es">
+              <Languages size={16} /> {site.spanishLine}
             </li>
             <li className="flex items-center gap-2">
               <MapPin size={16} /> {site.city}

@@ -40,11 +40,18 @@ npm run build && npm start
   qualifies storm damage vs. routine estimates. Messages hit `/api/chat`.
 - **Before/After slider** and a **Google-style reviews dashboard** — both
   rendered with inline SVG, no image downloads.
+- **Maggie answers the phone too** (`lib/voice.ts`, `app/api/voice/*`) — a
+  Twilio number where the same Maggie qualifies callers out loud and files the
+  lead into the same CRM pipeline. See **[VOICE.md](VOICE.md)** for setup, and
+  `npm run simulate-call` to drive a whole call from the terminal without a
+  phone.
 
 ## Backend / CRM integration
 
 - `app/api/lead/route.ts` — captures quote + estimate leads.
 - `app/api/chat/route.ts` — powers Maggie and finalizes qualified chat leads.
+- `app/api/voice/*` — the phone line: Twilio webhooks for the call, each
+  spoken turn, and the end-of-call lead finalization.
 - `lib/crm.ts` — normalizes every lead and fans it out to **JobNimbus** and
   **AccuLynx** payload adapters plus a generic Zapier channel via
   `dispatchToCRMs()`.

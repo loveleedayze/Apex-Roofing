@@ -13,7 +13,11 @@ const now = () =>
 const SEED: Msg[] = [
   {
     from: "maggie",
-    text: `Hi, I'm Maggie Mae, your AI Receptionist at ${site.name}! 👋 Are you dealing with storm/leak damage, or looking for a routine roofing estimate?`,
+    // The Spanish and Korean invitations are part of the greeting rather than a
+    // banner: a visitor should see, in the first thing Maggie says, that
+    // writing back in their language will work. She follows whichever language
+    // they answer in.
+    text: `Hi, I'm Maggie Mae, your AI Receptionist at ${site.name}! 👋 Are you dealing with storm/leak damage, or looking for a routine roofing estimate? — ¿Prefiere español? Escríbame en español. · 한국어로 쓰셔도 돼요.`,
     time: "9:14 AM",
   },
   {
@@ -129,7 +133,7 @@ export default function MaggieChat() {
                 <div className="flex items-center gap-1 font-bold">
                   Maggie Mae <Sparkles size={13} className="text-brand-gold" />
                 </div>
-                <div className="text-[11px] text-white/70">AI Receptionist • Online</div>
+                <div className="text-[11px] text-white/70">AI Receptionist • English & Español</div>
               </div>
             </div>
             <button onClick={() => setOpen(false)} aria-label="Close chat">
@@ -145,7 +149,7 @@ export default function MaggieChat() {
             </div>
           ) : (
             <div className="bg-orange-50 px-4 py-2 text-center text-xs font-semibold text-brand-accentDark">
-              Hi, I&apos;m Maggie Mae, your AI Receptionist.
+              Hi, I&apos;m Maggie Mae, your AI Receptionist. Hablo español · 한국어 가능
             </div>
           )}
 
@@ -167,7 +171,7 @@ export default function MaggieChat() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && send()}
-              placeholder="Type your message…"
+              placeholder="English, español, 한국어…"
               className="flex-1 rounded-full border border-slate-200 px-4 py-2 text-sm outline-none focus:border-brand-accent"
             />
             <button
@@ -192,7 +196,7 @@ export default function MaggieChat() {
           </span>
           <span className="text-left leading-tight">
             <span className="block text-sm font-bold">Chat with Maggie Mae</span>
-            <span className="block text-[11px] text-white/70">AI Receptionist • Online</span>
+            <span className="block text-[11px] text-white/70">AI Receptionist • English & Español</span>
           </span>
         </button>
       )}

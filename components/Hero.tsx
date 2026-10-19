@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Phone, Star, Clock, ShieldCheck, ArrowRight } from "lucide-react";
+import { Phone, Star, Clock, ShieldCheck, ArrowRight, Languages } from "lucide-react";
 import { site } from "@/lib/site";
 
 /**
@@ -41,10 +41,11 @@ export default function Hero() {
           </div>
 
           {/* Trust chips */}
-          <div className="mt-8 grid grid-cols-3 gap-3 text-center text-xs">
+          <div className="mt-8 grid grid-cols-2 gap-3 text-center text-xs sm:grid-cols-4">
             <Chip icon={<Clock size={16} />} label="24/7 Storm Response" />
             <Chip icon={<ShieldCheck size={16} />} label="Licensed & Insured" />
             <Chip icon={<Star size={16} />} label="Lifetime Warranty" />
+            <Chip icon={<Languages size={16} />} label={site.spanishLine} lang="es" />
           </div>
         </div>
 
@@ -57,6 +58,7 @@ export default function Hero() {
               ["Same-day inspections", "Report + photos within hours, not days."],
               ["Insurance specialists", "We handle the claim paperwork for you."],
               ["No money down", "You pay nothing until the job is done right."],
+              ["English, Spanish & Korean", "Atendemos en español · 한국어로도 상담해 드려요."],
               ["Instant online quote", "Ballpark your project in under a minute."],
             ].map(([t, d]) => (
               <li key={t} className="flex gap-3">
@@ -76,9 +78,9 @@ export default function Hero() {
   );
 }
 
-function Chip({ icon, label }: { icon: React.ReactNode; label: string }) {
+function Chip({ icon, label, lang }: { icon: React.ReactNode; label: string; lang?: string }) {
   return (
-    <div className="flex flex-col items-center gap-1 rounded-lg bg-white/5 py-3 text-white/80">
+    <div className="flex flex-col items-center gap-1 rounded-lg bg-white/5 py-3 text-white/80" lang={lang}>
       <span className="text-brand-gold">{icon}</span>
       {label}
     </div>

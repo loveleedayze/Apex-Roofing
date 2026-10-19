@@ -47,9 +47,20 @@ shapes if the client has their own mark.
 - `CUSTOM_KNOWLEDGE` — plain-English facts Maggie should know (hours, exact
   service area, financing, warranties, insurance-claim help). This is how you
   "train" her — no ML required.
-- `MODEL` — `claude-opus-4-8` (default) or `claude-haiku-4-5` (cheaper/faster
-  for high chat volume).
+- `MODEL` — `claude-haiku-4-5` (default; fast and cheap, which matters most on
+  the phone) or `claude-opus-5` for better judgment on off-script questions.
 - The company facts come from `lib/site.ts` automatically — don't repeat them.
+- `buildVoiceSystemPrompt()` is her *phone* manner, kept separate because
+  speech and text need different instructions. `CUSTOM_KNOWLEDGE` feeds both,
+  so tailoring a client once covers chat and phone.
+
+## 3b. The phone line (optional) — see `VOICE.md`
+
+Maggie can also answer a real phone number via Twilio. It's a per-client add-on:
+buy a number, paste two credentials, point two webhooks at the deployment. The
+leads land in the same CRM pipeline, tagged `Inbound Call`.
+
+Full walkthrough in **[VOICE.md](VOICE.md)**. Budget ~10 minutes per client.
 
 ---
 
@@ -80,9 +91,14 @@ never in the code. See `.env.example` for the full list.
 | `JOBNIMBUS_WEBHOOK_URL` | Deliver leads to JobNimbus | — |
 | `ACCULYNX_WEBHOOK_URL` | Deliver leads to AccuLynx | — |
 | `ZAPIER_WEBHOOK_URL` | Generic catch-all → email/SMS/Sheets | — |
+| `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` | Maggie answers the phone | No phone line; site unaffected |
+| `UPSTASH_REDIS_REST_URL` / `_TOKEN` | Call transcripts survive between requests | Phone line is unreliable on serverless |
 
 Set **at least one** CRM webhook, or leads are only logged (demo mode). Zapier is
 the easiest universal option.
+
+If you're selling the phone line, `TWILIO_AUTH_TOKEN` and the Upstash pair are
+both required — see `VOICE.md` for why.
 
 ---
 
@@ -105,3 +121,6 @@ the easiest universal option.
 - [ ] `ANTHROPIC_API_KEY` + a CRM webhook set in Vercel
 - [ ] Custom domain connected
 - [ ] Test: submit the quote form + chat with Maggie, confirm a lead arrives
+- [ ] If selling the phone line: Twilio number bought, both webhooks pointed at
+      the deployment, `TWILIO_AUTH_TOKEN` + Upstash set, and a real test call
+      placed end to end (`/api/health` shows no `voice.warnings`)
